@@ -3,6 +3,7 @@ name = "battery-stats"
 version = "0.1.0"
 authors = ["Murad <muradkarammaev@gmail.com>"]
 edition = "2018"
+default-run = "read-stats"
 
 [[bin]]
 name = "read-stats"
@@ -14,3 +15,4 @@ path = "src/process-stats/bin/main.rs"
 
 [dependencies]
 csv = "1.1"
+getopts = "0.2"
