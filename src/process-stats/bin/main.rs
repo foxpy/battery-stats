@@ -1,6 +1,63 @@
 use getopts::Options;
 use std::fs::File;
-use std::{env, process};
+use std::{env, fmt, process};
+
+#[derive(Default)]
+struct StatisticalPopulation {
+    statistical_population: Vec<f64>,
+    variation_series: Vec<f64>,
+    average: f64,
+    dispersion: f64,
+    stddev: f64,
+    corrected_dispersion: f64,
+    corrected_stddev: f64,
+}
+
+impl StatisticalPopulation {
+    fn new(input: &Vec<f64>) -> StatisticalPopulation {
+        let mut sp = StatisticalPopulation::default();
+        sp.statistical_population = input.clone();
+        sp.variation_series = input.clone();
+        sp.variation_series
+            .sort_by(|a, b| a.partial_cmp(b).unwrap());
+        sp.average = sp.variation_series.iter().sum::<f64>() / sp.variation_series.len() as f64;
+        sp.dispersion = sp
+            .variation_series
+            .iter()
+            .map(|x| (x - sp.average).powf(2.0))
+            .sum::<f64>()
+            / sp.variation_series.len() as f64;
+        sp.stddev = sp.dispersion.sqrt();
+        sp.corrected_dispersion = sp.dispersion * sp.variation_series.len() as f64
+            / (sp.variation_series.len() - 1) as f64;
+        sp.corrected_stddev = sp.corrected_dispersion.sqrt();
+        sp
+    }
+}
+
+impl fmt::Display for StatisticalPopulation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(
+            f,
+            "Генеральная совокупность: {:?}",
+            self.statistical_population
+        )?;
+        writeln!(f, "Вариационный ряд: {:?}", self.variation_series)?;
+        writeln!(f, "Математическое ожидание: {:.5}", self.average)?;
+        writeln!(f, "Дисперсия: {:.5}", self.dispersion)?;
+        writeln!(f, "Стандартное отклонение: {:.5}", self.stddev)?;
+        writeln!(
+            f,
+            "Дисперсия исправленная: {:.5}",
+            self.corrected_dispersion
+        )?;
+        write!(
+            f,
+            "Стандартное отклонение исправленное: {:.5}",
+            self.corrected_stddev
+        )
+    }
+}
 
 fn print_help(program_name: &str, opts: Options) -> ! {
     let brief = format!("Usage: {} input.csv", program_name);
@@ -22,18 +79,15 @@ fn read_input_file(file: &str) -> std::io::Result<Vec<f64>> {
     Ok(measures)
 }
 
-fn process_data(input: &Vec<f64>) {
-    let mut sorted = input.clone();
-    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
-    let average = input.iter().sum::<f64>() / input.len() as f64;
-    let dispersion =
-        (input.iter().map(|x| x.powf(2.0)).sum::<f64>() / input.len() as f64) - average.powf(2.0);
-    let stddev = dispersion.sqrt();
-    println!("Генеральная совокупность: {:?}", input);
-    println!("Вариационный ряд: {:?}", sorted);
-    println!("Среднее значение: {:.5}", average);
-    println!("Дисперсия: {:.5}", dispersion);
-    println!("Стандартное отклонение: {:.5}", stddev);
+fn sample(input: &Vec<f64>, start: usize, n: usize) -> Vec<f64> {
+    input
+        .clone()
+        .into_iter()
+        .skip(start-1)
+        .enumerate()
+        .filter(|(i, _)| i % n == n - 1)
+        .map(|(_, v)| v)
+        .collect()
 }
 
 fn main() {
@@ -49,23 +103,15 @@ fn main() {
     }
 
     let measures = read_input_file(&matches.free[0]).unwrap();
-    process_data(&measures);
-    println!("\nВыборка [каждый второй]:");
-    let each_second = measures
-        .clone()
-        .into_iter()
-        .enumerate()
-        .filter(|(i, _)| i % 2 == 1)
-        .map(|(_, v)| v)
-        .collect::<Vec<_>>();
-    process_data(&each_second);
-    println!("\nВыборка [каждый пятый]:");
-    let each_fifth = measures
-        .clone()
-        .into_iter()
-        .enumerate()
-        .filter(|(i, _)| i % 5 == 1)
-        .map(|(_, v)| v)
-        .collect::<Vec<_>>();
-    process_data(&each_fifth);
+    let general = StatisticalPopulation::new(&measures);
+    let each_second = StatisticalPopulation::new(&sample(&measures, 1, 2));
+    let each_fifth = StatisticalPopulation::new(&sample(&measures, 1, 5));
+    let each_fifth_from_second = StatisticalPopulation::new(&sample(&measures, 2, 5));
+    println!("{}", general);
+    println!("\nВыборка [каждый второй]:\n{}", each_second);
+    println!("\nВыборка [каждый пятый]:\n{}", each_fifth);
+    println!(
+        "\nВыборка [каждый пятый со второго]:\n{}",
+        each_fifth_from_second
+    );
 }
