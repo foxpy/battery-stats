@@ -14,10 +14,10 @@ struct StatisticalPopulation {
 }
 
 impl StatisticalPopulation {
-    fn new(input: &Vec<f64>) -> StatisticalPopulation {
+    fn new(input: &[f64]) -> StatisticalPopulation {
         let mut sp = StatisticalPopulation::default();
-        sp.statistical_population = input.clone();
-        sp.variation_series = input.clone();
+        sp.statistical_population = input.to_owned();
+        sp.variation_series = input.to_owned();
         sp.variation_series
             .sort_by(|a, b| a.partial_cmp(b).unwrap());
         sp.average = sp.variation_series.iter().sum::<f64>() / sp.variation_series.len() as f64;
@@ -79,9 +79,9 @@ fn read_input_file(file: &str) -> std::io::Result<Vec<f64>> {
     Ok(measures)
 }
 
-fn sample(input: &Vec<f64>, start: usize, n: usize) -> Vec<f64> {
+fn sample(input: &[f64], start: usize, n: usize) -> Vec<f64> {
     input
-        .clone()
+        .to_owned()
         .into_iter()
         .skip(start-1)
         .enumerate()
