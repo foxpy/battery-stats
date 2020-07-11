@@ -81,12 +81,11 @@ fn read_input_file(file: &str) -> std::io::Result<Vec<f64>> {
 
 fn sample(input: &[f64], start: usize, n: usize) -> Vec<f64> {
     input
-        .to_owned()
-        .into_iter()
+        .iter()
         .skip(start-1)
         .enumerate()
         .filter(|(i, _)| i % n == n - 1)
-        .map(|(_, v)| v)
+        .map(|(_, v)| *v)
         .collect()
 }
 
