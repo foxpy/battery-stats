@@ -16,3 +16,4 @@ path = "src/process-stats/bin/main.rs"
 [dependencies]
 csv = "1.1"
 getopts = "0.2"
+plotters = "0.2.15"
