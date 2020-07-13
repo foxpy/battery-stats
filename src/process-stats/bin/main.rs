@@ -1,20 +1,33 @@
 use getopts::Options;
+use itertools::Itertools;
+use plotters::prelude::*;
+use std::collections::HashMap;
 use std::fs::File;
-use std::{env, fmt, process};
+use std::hash::{Hash, Hasher};
+use std::{env, fmt, mem, process};
 
-#[derive(PartialEq, Eq, Hash)]
-struct Decimal {
-    val: u64,
-    fract: u8,
-}
+#[derive(Debug)]
+struct HashedDouble(f64);
 
-impl Decimal {
-    fn new(x: f64) -> Decimal {
-        let val = x as u64;
-        let fract = ((x * 100.0) as u64 % 100) as u8;
-        Decimal{val, fract}
+impl HashedDouble {
+    fn key(&self) -> u64 {
+        unsafe { mem::transmute(self.0) }
     }
 }
+
+impl Hash for HashedDouble {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.key().hash(state)
+    }
+}
+
+impl PartialEq for HashedDouble {
+    fn eq(&self, other: &HashedDouble) -> bool {
+        self.key() == other.key()
+    }
+}
+
+impl Eq for HashedDouble {}
 
 #[derive(Default)]
 struct StatisticalPopulation {
@@ -49,10 +62,44 @@ impl StatisticalPopulation {
     }
 
     fn plot_frequency_range(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
-        Ok(())
-    }
-
-    fn plot_histogram(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let root = BitMapBackend::new(path, (1280, 720)).into_drawing_area();
+        root.fill(&WHITE)?;
+        let min = *self
+            .variation_series
+            .iter()
+            .min_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap();
+        let max = *self
+            .variation_series
+            .iter()
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap();
+        let mut repetitions = HashMap::<HashedDouble, u64>::new();
+        for val in self.variation_series.iter() {
+            let entry = repetitions.entry(HashedDouble(*val)).or_insert(0);
+            *entry += 1;
+        }
+        let upper = *repetitions
+            .iter()
+            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
+            .unwrap()
+            .1
+            + 1;
+        let mut chart = ChartBuilder::on(&root)
+            .caption("Полигон частот", ("sans-serif", 50).into_font())
+            .margin(10)
+            .x_label_area_size(30)
+            .y_label_area_size(30)
+            .build_ranged(min..max, 0f64..(upper as f64))?;
+        chart.configure_mesh().draw()?;
+        chart.draw_series(LineSeries::new(
+            repetitions
+                .iter()
+                .map(|(a, b)| (a.0, *b as f64))
+                .sorted_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap()),
+            &RED,
+        ))?;
+        chart.configure_series_labels().draw()?;
         Ok(())
     }
 }
@@ -105,7 +152,7 @@ fn sample(input: &Vec<f64>, start: usize, n: usize) -> Vec<f64> {
     input
         .clone()
         .into_iter()
-        .skip(start-1)
+        .skip(start - 1)
         .enumerate()
         .filter(|(i, _)| i % n == n - 1)
         .map(|(_, v)| v)
@@ -140,4 +187,16 @@ fn main() {
         "\nВыборка [каждый пятый со второго]:\n{}",
         each_fifth_from_second
     );
+    general
+        .plot_frequency_range("general_frequency_range.png")
+        .unwrap();
+    each_second
+        .plot_frequency_range("each_second_frequency_range.png")
+        .unwrap();
+    each_fifth
+        .plot_frequency_range("each_fifth_frequency_range.png")
+        .unwrap();
+    each_fifth_from_second
+        .plot_frequency_range("each_fifth_from_second_frequency_range.png")
+        .unwrap();
 }
