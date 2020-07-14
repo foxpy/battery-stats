@@ -4,6 +4,7 @@ use plotters::prelude::*;
 use std::collections::HashMap;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
+use std::io::prelude::*;
 use std::{env, fmt, fs, process};
 
 #[derive(Debug)]
@@ -62,6 +63,8 @@ impl StatisticalPopulation {
     }
 
     fn plot_frequency_range(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
+        print!("Plotting frequency range to {}... ", path);
+        std::io::stdout().flush().unwrap();
         let root = BitMapBackend::new(path, (1280, 720)).into_drawing_area();
         root.fill(&WHITE)?;
         let min = *self
@@ -97,9 +100,57 @@ impl StatisticalPopulation {
                 .iter()
                 .map(|(a, b)| (a.0, *b as f64))
                 .sorted_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap()),
-            &RED,
+            &BLUE,
         ))?;
         chart.configure_series_labels().draw()?;
+        println!("done!");
+        Ok(())
+    }
+
+    fn plot_histogram(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
+        print!("Plotting histogram to {}... ", path);
+        std::io::stdout().flush().unwrap();
+        let root = BitMapBackend::new(path, (1280, 720)).into_drawing_area();
+        root.fill(&WHITE)?;
+        let rounded: Vec<u32> = self
+            .variation_series
+            .iter()
+            .map(|x| x.floor() as u32)
+            .collect();
+        let min = *rounded.first().unwrap();
+        let max = *rounded.last().unwrap();
+        let mut repetitions = HashMap::<u32, u32>::new();
+        for val in rounded.iter() {
+            let entry = repetitions.entry(*val).or_insert(0);
+            *entry += 1;
+        }
+        let upper = *repetitions
+            .iter()
+            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+            .unwrap()
+            .1 as f32
+            * 1.1;
+        let mut chart = ChartBuilder::on(&root)
+            .x_label_area_size(35)
+            .y_label_area_size(40)
+            .margin(5)
+            .caption("Гистограмма", ("sans-serif", 50.0).into_font())
+            .build_ranged(min..max, 0f32..upper)?;
+        chart
+            .configure_mesh()
+            .disable_x_mesh()
+            .disable_y_mesh()
+            .line_style_1(&WHITE.mix(0.3))
+            .x_label_offset(30)
+            .axis_desc_style(("sans-serif", 15).into_font())
+            .draw()?;
+        chart.draw_series(
+            Histogram::vertical(&chart)
+                .style(BLUE.mix(0.6).filled())
+                .margin(0)
+                .data(rounded.iter().map(|x: &u32| (*x, 1f32))),
+        )?;
+        println!("done!");
         Ok(())
     }
 }
@@ -193,13 +244,23 @@ fn main() {
     general
         .plot_frequency_range("general_frequency_range.png")
         .unwrap();
+    general.plot_histogram("general_histogram.png").unwrap();
     each_second
         .plot_frequency_range("each_second_frequency_range.png")
+        .unwrap();
+    each_second
+        .plot_histogram("each_second_histogram.png")
         .unwrap();
     each_fifth
         .plot_frequency_range("each_fifth_frequency_range.png")
         .unwrap();
+    each_fifth
+        .plot_histogram("each_fifth_histogram.png")
+        .unwrap();
     each_fifth_from_second
         .plot_frequency_range("each_fifth_from_second_frequency_range.png")
+        .unwrap();
+    each_fifth_from_second
+        .plot_histogram("each_fifth_from_second_histogram.png")
         .unwrap();
 }
