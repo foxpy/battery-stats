@@ -117,8 +117,8 @@ impl StatisticalPopulation {
             .iter()
             .map(|x| x.floor() as u32)
             .collect();
-        let min = *rounded.first().unwrap();
-        let max = *rounded.last().unwrap();
+        let min = *rounded.first().unwrap() - 2;
+        let max = *rounded.last().unwrap() + 2;
         let mut repetitions = HashMap::<u32, u32>::new();
         for val in rounded.iter() {
             let entry = repetitions.entry(*val).or_insert(0);
