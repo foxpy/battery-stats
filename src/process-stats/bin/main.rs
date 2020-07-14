@@ -4,7 +4,7 @@ use plotters::prelude::*;
 use std::collections::HashMap;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
-use std::{env, fmt, process};
+use std::{env, fmt, fs, process};
 
 #[derive(Debug)]
 struct HashedDouble(f64);
@@ -168,7 +168,11 @@ fn main() {
         print_help(&args[0], opts);
     }
     if matches.opt_present("d") {
-        env::set_current_dir(matches.opt_str("d").unwrap()).unwrap();
+        let output_directory = matches.opt_str("d").unwrap();
+        if let Err(_) = env::set_current_dir(&output_directory) {
+            fs::create_dir_all(&output_directory).unwrap();
+            env::set_current_dir(&output_directory).unwrap();
+        }
     }
     if matches.free.is_empty() {
         panic!("No input file specified");
