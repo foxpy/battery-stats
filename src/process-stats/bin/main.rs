@@ -157,6 +157,7 @@ impl StatisticalPopulation {
 
 impl fmt::Display for StatisticalPopulation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Всего элементов: {}", self.statistical_population.len())?;
         writeln!(
             f,
             "Генеральная совокупность: {:?}",
