@@ -209,7 +209,7 @@ fn sample(input: &[f64], start: usize, n: usize) -> Vec<f64> {
         .collect()
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
     let mut opts = Options::new();
     opts.optflag("h", "help", "print this message");
@@ -237,30 +237,14 @@ fn main() {
     println!("{}", general);
     println!("\nВыборка [каждый второй]:\n{}", each_second);
     println!("\nВыборка [каждый пятый]:\n{}", each_fifth);
-    println!(
-        "\nВыборка [каждый пятый со второго]:\n{}",
-        sample
-    );
-    general
-        .plot_frequency_range("general_frequency_range.png")
-        .unwrap();
-    general.plot_histogram("general_histogram.png").unwrap();
-    each_second
-        .plot_frequency_range("each_second_frequency_range.png")
-        .unwrap();
-    each_second
-        .plot_histogram("each_second_histogram.png")
-        .unwrap();
-    each_fifth
-        .plot_frequency_range("each_fifth_frequency_range.png")
-        .unwrap();
-    each_fifth
-        .plot_histogram("each_fifth_histogram.png")
-        .unwrap();
-    sample
-        .plot_frequency_range("sample_frequency_range.png")
-        .unwrap();
-    sample
-        .plot_histogram("sample_histogram.png")
-        .unwrap();
+    println!("\nВыборка [аудиторная часть]:\n{}", sample);
+    general.plot_frequency_range("general_frequency_range.png")?;
+    general.plot_histogram("general_histogram.png")?;
+    each_second.plot_frequency_range("each_second_frequency_range.png")?;
+    each_second.plot_histogram("each_second_histogram.png")?;
+    each_fifth.plot_frequency_range("each_fifth_frequency_range.png")?;
+    each_fifth.plot_histogram("each_fifth_histogram.png")?;
+    sample.plot_frequency_range("sample_frequency_range.png")?;
+    sample.plot_histogram("sample_histogram.png")?;
+    Ok(())
 }
