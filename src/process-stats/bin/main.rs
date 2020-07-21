@@ -233,13 +233,13 @@ fn main() {
     let general = StatisticalPopulation::new(&measures);
     let each_second = StatisticalPopulation::new(&sample(&measures, 1, 2));
     let each_fifth = StatisticalPopulation::new(&sample(&measures, 1, 5));
-    let each_fifth_from_second = StatisticalPopulation::new(&sample(&measures, 2, 5));
+    let sample = StatisticalPopulation::new(&sample(&measures, 2, 5));
     println!("{}", general);
     println!("\nВыборка [каждый второй]:\n{}", each_second);
     println!("\nВыборка [каждый пятый]:\n{}", each_fifth);
     println!(
         "\nВыборка [каждый пятый со второго]:\n{}",
-        each_fifth_from_second
+        sample
     );
     general
         .plot_frequency_range("general_frequency_range.png")
@@ -257,10 +257,10 @@ fn main() {
     each_fifth
         .plot_histogram("each_fifth_histogram.png")
         .unwrap();
-    each_fifth_from_second
-        .plot_frequency_range("each_fifth_from_second_frequency_range.png")
+    sample
+        .plot_frequency_range("sample_frequency_range.png")
         .unwrap();
-    each_fifth_from_second
-        .plot_histogram("each_fifth_from_second_histogram.png")
+    sample
+        .plot_histogram("sample_histogram.png")
         .unwrap();
 }
