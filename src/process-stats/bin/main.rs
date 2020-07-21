@@ -221,7 +221,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if matches.opt_present("d") {
         let output_directory = matches.opt_str("d").unwrap();
-        if let Err(_) = env::set_current_dir(&output_directory) {
+        if env::set_current_dir(&output_directory).is_err() {
             fs::create_dir_all(&output_directory).unwrap();
             env::set_current_dir(&output_directory).unwrap();
         }
